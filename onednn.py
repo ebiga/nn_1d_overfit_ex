@@ -1,3 +1,4 @@
+import os
 import silence_tensorflow.auto
 import matplotlib
 matplotlib.use('TkAgg')
@@ -18,14 +19,6 @@ tf.keras.backend.set_floatx('float64')
 tf.random.set_seed(42)
 tf.keras.utils.set_random_seed(42)
 
-x_min = -1.0
-x_max =  1.0
-n_pts =  7
-
-lr = 0.001
-epocs = 15000
-batchs = 3
-nn_layers = [120,120,120,120,120,120,120]
 
 
 ## FUNCTION: Compute Laplacians for 1D, cell centred, for normal or staggered meshes
@@ -73,11 +66,11 @@ def minimise_NN_RMSE(model, DATAX, DATAF):
 
 
 ## FUNCTION: Build a model
-def get_me_a_model(nn_layers, input_shape):
+def get_me_a_model(nn_layers, input_shape, activfunk):
     inputs = tf.keras.Input(shape=input_shape)
     x = inputs
     for nn in nn_layers:
-        x = layers.Dense(nn, activation='tanh', kernel_initializer='he_normal')(x)
+        x = layers.Dense(nn, activation=activfunk, kernel_initializer='he_normal')(x)
     output = layers.Dense(1)(x)
     model = tf.keras.Model(inputs=inputs, outputs=output)
     return model
@@ -91,8 +84,8 @@ def check_mean(mean, refd):
     mae_check = np.mean( np.abs(delta) )
     max_check = np.max( np.abs(delta) )
 
-    msg = " Errors: rms, mean, max: " + f"\t{rms_check:.3e};\t {mae_check:.3e};\t {max_check:.3e}\n"
-    print(msg)
+    msg = "Errors: rms, mean, max: " + f"\t{rms_check:.3e};\t {mae_check:.3e};\t {max_check:.3e}\n"
+    return msg
 
 
 ## FUNCTION: Custom activation function, this is like a leaky ELU
@@ -155,7 +148,36 @@ def my_func(x, name='tanh'):
 
         
 
-# build the dataset space
+
+
+
+## DEFINITIONS
+#_ function
+x_min = -1.0
+x_max =  1.0
+n_pts =  7
+
+#_ network
+lr = 0.001
+epocs = 150
+batchs = 3
+nn_layers = [120] * 7
+
+#_ general shiz
+num_layers = len(nn_layers)
+layer_size = nn_layers[0]
+layer_tag  = f"{num_layers}x{layer_size}"
+
+actifun = {
+    'lelu-0.4': LeakyELU(),
+    'tanh': tf.keras.activations.tanh,
+    'elu': tf.keras.activations.elu,
+    'relu': tf.keras.activations.relu,
+    'leaky_relu': tf.keras.activations.leaky_relu,
+}
+
+
+# Build the dataset space
 DATAX = np.linspace(x_min, x_max, n_pts)
 DATAF = my_func(DATAX)
 
@@ -169,46 +191,57 @@ STAGX = ( DATAX[:-1] + DATAX[1:] ) / 2.
 laplacian_dataf = compute_Laplacian(DATAF, DATAF)
 
 
-# build and train the model
-gisele = get_me_a_model(nn_layers, [1])
-gisele, loss = minimise_NN_RMSE(gisele, DATAX, DATAF)
+# Loop for several activation functions
+for an, af in actifun.items():
+    print(f"Doing {an}")
+    dafolda = os.path.join(layer_tag, an)
+    os.makedirs(dafolda, exist_ok=True)
+
+    flightlog = open(os.path.join(dafolda, 'log.txt'), 'w')
+
+    # build and train the model
+    gisele = get_me_a_model(nn_layers, [1], af)
+    gisele, loss = minimise_NN_RMSE(gisele, DATAX, DATAF)
 
 
-# how bout data
-ymean = gisele.predict(DATAX).reshape(-1)
-check_mean(ymean, DATAF)
+    # how bout data
+    ymean = gisele.predict(DATAX).reshape(-1)
+    msg = check_mean(ymean, DATAF)
+    print(msg)
+    flightlog.write(msg+'\n')
 
-ystag = gisele.predict(STAGX).reshape(-1)
-laplacian_stagf = compute_Laplacian(ymean, ystag)
+    ystag = gisele.predict(STAGX).reshape(-1)
+    laplacian_stagf = compute_Laplacian(ymean, ystag)
 
-loss_m = np.sqrt(np.mean((laplacian_stagf - laplacian_dataf)**2.))
-msg = f"RMSE of the Laplacians: {loss_m:.3e}"
-print(msg)
-
-
-# print da loss
-plt.plot(np.array(loss), label=f"Training Loss (RMSE of the Laplacians: {loss_m:.3e})")
-plt.xlabel('Epochs')
-plt.ylabel('Log(Loss)')
-plt.title('Loss Convergence')
-plt.legend()
-plt.savefig('convergence.png', format='png', dpi=1200)
-plt.close()
+    loss_m = np.sqrt(np.mean((laplacian_stagf - laplacian_dataf)**2.))
+    msg = f"RMSE of the Laplacians: {loss_m:.3e}"
+    print(msg)
+    flightlog.write(msg+'\n')
 
 
-# print da data
-xplot = np.linspace(x_min, x_max, 999)
-yplot = my_func(xplot)
-ypred = gisele.predict(xplot).reshape(-1)
+    # print da loss
+    plt.plot(np.array(loss), label=f"Training Loss (RMSE of the Laplacians: {loss_m:.3e})")
+    plt.xlabel('Epochs')
+    plt.ylabel('Log(Loss)')
+    plt.title('Loss Convergence')
+    plt.legend()
+    plt.savefig(os.path.join(dafolda, 'convergence.png'), format='png', dpi=1200)
+    plt.close()
 
-predfile = pd.DataFrame(xplot)
-predfile['f'] = yplot
-predfile['f_pred'] = ypred
-predfile.to_csv('test_data_out.csv', index=False)
 
-plt.scatter(DATAX, DATAF, label='training')
-plt.plot(xplot, yplot, label='ref')
-plt.plot(xplot, ypred, label='pred')
-plt.legend()
-plt.savefig('result.png', format='png', dpi=1200)
-plt.show()
+    # print da data
+    xplot = np.linspace(x_min, x_max, 999)
+    yplot = my_func(xplot)
+    ypred = gisele.predict(xplot).reshape(-1)
+
+    predfile = pd.DataFrame(xplot)
+    predfile['f'] = yplot
+    predfile['f_pred'] = ypred
+    predfile.to_csv(os.path.join(dafolda, 'test_data_out.csv'), index=False)
+
+    plt.scatter(DATAX, DATAF, label='training')
+    plt.plot(xplot, yplot, label='ref')
+    plt.plot(xplot, ypred, label='pred')
+    plt.legend()
+    plt.savefig(os.path.join(dafolda, 'result.png'), format='png', dpi=1200)
+    plt.show()
