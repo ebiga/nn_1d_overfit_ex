@@ -244,3 +244,4 @@ for an, af in actifun.items():
     plt.plot(xplot, ypred, label='pred')
     plt.legend()
     plt.savefig(os.path.join(dafolda, 'result.png'), format='png', dpi=1200)
+    plt.close()
