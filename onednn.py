@@ -142,7 +142,7 @@ def my_func(x, name='tanh'):
         y = x**3 - 2 * x**2 + x
     
     elif name == 'tanh':
-        y = np.tanh(5.0*x)
+        y = 0.5 + 0.5*np.tanh(5.0*x)
 
     return y
 
