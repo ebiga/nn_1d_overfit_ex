@@ -159,7 +159,7 @@ n_pts =  7
 
 #_ network
 lr = 0.001
-epocs = 150
+epocs = 15000
 batchs = 3
 nn_layers = [120] * 7
 
@@ -244,4 +244,3 @@ for an, af in actifun.items():
     plt.plot(xplot, ypred, label='pred')
     plt.legend()
     plt.savefig(os.path.join(dafolda, 'result.png'), format='png', dpi=1200)
-    plt.show()
