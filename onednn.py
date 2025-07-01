@@ -155,13 +155,13 @@ def my_func(x, name='tanh'):
 #_ function
 x_min = -1.0
 x_max =  1.0
-n_pts =  7
+n_pts =  14
 
 #_ network
 lr = 0.001
 epocs = 15000
 batchs = 3
-nn_layers = [120] * 7
+nn_layers = [240] * 8
 
 #_ general shiz
 num_layers = len(nn_layers)
@@ -169,11 +169,13 @@ layer_size = nn_layers[0]
 layer_tag  = f"{num_layers}x{layer_size}"
 
 actifun = {
-    'lelu-0.4': LeakyELU(),
     'tanh': tf.keras.activations.tanh,
     'elu': tf.keras.activations.elu,
     'relu': tf.keras.activations.relu,
     'leaky_relu': tf.keras.activations.leaky_relu,
+    'lelu-0.3': LeakyELU(beta=0.3),
+    'lelu-0.4': LeakyELU(),
+    'lelu-0.6': LeakyELU(beta=0.6),
 }
 
 
