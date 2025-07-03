@@ -172,13 +172,15 @@ layer_size = nn_layers[0]
 layer_tag  = f"{num_layers}x{layer_size}"
 
 actifun = {
-    'tanh': tf.keras.activations.tanh,
     'elu': tf.keras.activations.elu,
+    'silu': tf.keras.activations.silu,
     'relu': tf.keras.activations.relu,
     'leaky_relu': tf.keras.activations.leaky_relu,
     'lelu-0.3': LeakyELU(beta=0.3),
     'lelu-0.4': LeakyELU(),
     'lelu-0.6': LeakyELU(beta=0.6),
+    'softplus': tf.keras.activations.softplus,
+    'tanh': tf.keras.activations.tanh,
 }
 
 
