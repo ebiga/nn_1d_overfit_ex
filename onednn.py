@@ -143,6 +143,9 @@ def my_func(x, name='tanh'):
     
     elif name == 'tanh':
         y = 0.5 + 0.5*np.tanh(5.0*x)
+    
+    elif name == 'pointonex':
+        y = np.power(0.1, x)
 
     return y
 
