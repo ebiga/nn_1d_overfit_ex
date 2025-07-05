@@ -54,7 +54,7 @@ def compute_Laplacian(f_orig, f_stag):
 ## FUNCTION: Train a model
 def minimise_NN_RMSE(model, DATAX, DATAF):
     model.compile(loss='mean_absolute_error', optimizer=keras.optimizers.Adam(learning_rate=lr))
-    reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.5, patience=500, cooldown=100, verbose=1, min_lr=1e-6)
+    reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.5, patience=500, cooldown=100, verbose=1, min_lr=2e-7)
     history = model.fit(
         DATAX,
         DATAF,
@@ -164,7 +164,7 @@ n_pts =  14
 
 #_ network
 lr = 0.001
-epocs = 15000
+epocs = 20000
 batchs = 3
 nn_layers = [240] * 8
 
