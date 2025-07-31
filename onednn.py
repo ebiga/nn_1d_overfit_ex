@@ -71,7 +71,8 @@ def get_me_a_model(nn_layers, input_shape, activfunk):
     inputs = tf.keras.Input(shape=input_shape)
     x = inputs
     for nn in nn_layers:
-        x = layers.Dense(nn, activation=activfunk, kernel_initializer='he_normal')(x)
+        #x = layers.Dense(nn, activation=activfunk, kernel_initializer='he_normal')(x) #paper:
+        x = layers.Dense(nn, activation=activfunk, kernel_initializer=keras.initializers.GlorotUniform(seed=None))(x)
     output = layers.Dense(1)(x)
     model = tf.keras.Model(inputs=inputs, outputs=output)
     return model
