@@ -112,7 +112,7 @@ class LeakyELU(tf.keras.layers.Layer):
 
 
 ## FUNCTION: Our function
-def my_func(x, name='tanh'):
+def my_func(x, name=None):
 
     # Evaluate one of several benchmark functions at given input points x.
 
@@ -151,6 +151,9 @@ def my_func(x, name='tanh'):
         # 12 points, x ∈ [0, 1]
         y = np.power(0.1, x)
 
+    else:
+        raise TypeError("ERROR: Forgot to pick_a_function.")
+
     return y
 
         
@@ -160,6 +163,7 @@ def my_func(x, name='tanh'):
 
 ## DEFINITIONS
 folder_name = 'INIT_Check/Exp/'
+pick_a_function = 'pointonex'
 
 #_ function
 x_min = -1.0
@@ -192,7 +196,7 @@ actifun = {
 
 # Build the dataset space
 DATAX = np.linspace(x_min, x_max, n_pts)
-DATAF = my_func(DATAX)
+DATAF = my_func(DATAX, pick_a_function)
 
 reffile = pd.DataFrame(DATAX)
 reffile['f'] = DATAF
@@ -244,7 +248,7 @@ for an, af in actifun.items():
 
     # print da data
     xplot = np.linspace(x_min, x_max, 999)
-    yplot = my_func(xplot)
+    yplot = my_func(xplot, pick_a_function)
     ypred = gisele.predict(xplot).reshape(-1)
 
     predfile = pd.DataFrame(xplot)
