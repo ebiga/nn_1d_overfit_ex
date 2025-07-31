@@ -168,7 +168,7 @@ n_pts =  14
 
 #_ network
 lr = 0.001
-epocs = 20000
+epocs = 15000 #paper: 15000
 batchs = 3
 nn_layers = [240] * 8
 
