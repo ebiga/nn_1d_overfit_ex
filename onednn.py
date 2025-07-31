@@ -144,11 +144,11 @@ def my_func(x, name=None):
         y = x**3 - 2 * x**2 + x
     
     elif name == 'tanh':
-        # 7 and 14 points, x ∈ [0, 1]
+        # 7 and 14 points, x ∈ [-1, 1]
         y = 0.5 + 0.5*np.tanh(5.0*x)
     
     elif name == 'pointonex':
-        # 12 points, x ∈ [0, 1]
+        # 12 points, x ∈ [-1, 1]
         y = np.power(0.1, x)
 
     else:
