@@ -159,6 +159,8 @@ def my_func(x, name='tanh'):
 
 
 ## DEFINITIONS
+folder_name = 'INIT_Check/Exp/'
+
 #_ function
 x_min = -1.0
 x_max =  1.0
@@ -205,7 +207,7 @@ laplacian_dataf = compute_Laplacian(DATAF, DATAF)
 # Loop for several activation functions
 for an, af in actifun.items():
     print(f"Doing {an}")
-    dafolda = os.path.join(layer_tag, an)
+    dafolda = os.path.join(folder_name, layer_tag, an)
     os.makedirs(dafolda, exist_ok=True)
 
     flightlog = open(os.path.join(dafolda, 'log.txt'), 'w')
