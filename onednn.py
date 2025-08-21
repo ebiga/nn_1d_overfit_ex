@@ -164,26 +164,22 @@ def my_func(x, name=None):
 
 
 ## DEFINITIONS
-folder_name = 'INIT_Check/Exp/'
-pick_a_function = 'pointonex'
+folder_root = 'INIT_eval'
+pick_a_function = 'tanh'
 
 #_ function
 x_min = -1.0
 x_max =  1.0
-n_pts =  14
 
 #_ network
 lr = 0.001
 epocs = 15000 #paper: 15000
 batchs = 3
-nn_layers = [240] * 8
 
-#_ general shiz
-num_layers = len(nn_layers)
-layer_size = nn_layers[0]
-layer_tag  = f"{num_layers}x{layer_size}"
-
-actifun = {
+#_ looping params
+_n_pts =  [14, 7]
+_nn_layers = [[240] * 8, [120] * 7]
+_actifun = {
     'elu': tf.keras.activations.elu,
     'silu': tf.keras.activations.silu,
     'relu': tf.keras.activations.relu,
@@ -196,71 +192,80 @@ actifun = {
 }
 
 
-# Build the dataset space
-DATAX = np.linspace(x_min, x_max, n_pts)
-DATAF = my_func(DATAX, pick_a_function)
-
-reffile = pd.DataFrame(DATAX)
-reffile['f'] = DATAF
-reffile.to_csv('ref_data.csv', index=False)
-
-# staggered and laplacian
-STAGX = ( DATAX[:-1] + DATAX[1:] ) / 2.
-
-laplacian_dataf = compute_Laplacian(DATAF, DATAF)
-
-
 # Loop for several activation functions
-for an, af in actifun.items():
-    print(f"Doing {an}")
-    dafolda = os.path.join(folder_name, layer_tag, an)
-    os.makedirs(dafolda, exist_ok=True)
+for n_pts in _n_pts:
 
-    flightlog = open(os.path.join(dafolda, 'log.txt'), 'w')
+    # Build the dataset space
+    DATAX = np.linspace(x_min, x_max, n_pts)
+    DATAF = my_func(DATAX, pick_a_function)
 
-    # build and train the model
-    gisele = get_me_a_model(nn_layers, [1], af)
-    gisele, loss = minimise_NN_RMSE(gisele, DATAX, DATAF)
+    reffile = pd.DataFrame(DATAX)
+    reffile['f'] = DATAF
+    reffile.to_csv('ref_data.csv', index=False)
 
+    # staggered and laplacian
+    STAGX = ( DATAX[:-1] + DATAX[1:] ) / 2.
 
-    # how bout data
-    ymean = gisele.predict(DATAX).reshape(-1)
-    msg = check_mean(ymean, DATAF)
-    print(msg)
-    flightlog.write(msg+'\n')
+    laplacian_dataf = compute_Laplacian(DATAF, DATAF)
 
-    ystag = gisele.predict(STAGX).reshape(-1)
-    laplacian_stagf = compute_Laplacian(ymean, ystag)
+    for nn_layers in _nn_layers:
+        for an, af in _actifun.items():
+            print(f"Doing {an}")
 
-    loss_m = np.sqrt(np.mean((laplacian_stagf - laplacian_dataf)**2.))
-    msg = f"RMSE of the Laplacians: {loss_m:.3e}"
-    print(msg)
-    flightlog.write(msg+'\n')
+            num_layers = len(nn_layers)
+            layer_size = nn_layers[0]
+            layer_tag  = f"{num_layers}x{layer_size}"
 
+            folder_name = folder_root + '/' + pick_a_function + f'/seed{my_seed}'
 
-    # print da loss
-    plt.plot(np.array(loss), label=f"Training Loss (RMSE of the Laplacians: {loss_m:.3e})")
-    plt.xlabel('Epochs')
-    plt.ylabel('Log(Loss)')
-    plt.title('Loss Convergence')
-    plt.legend()
-    plt.savefig(os.path.join(dafolda, 'convergence.png'), format='png', dpi=1200)
-    plt.close()
+            dafolda = os.path.join(folder_name, layer_tag, an)
+            os.makedirs(dafolda, exist_ok=True)
+
+            flightlog = open(os.path.join(dafolda, 'log.txt'), 'w')
+
+            # build and train the model
+            gisele = get_me_a_model(nn_layers, [1], af)
+            gisele, loss = minimise_NN_RMSE(gisele, DATAX, DATAF)
 
 
-    # print da data
-    xplot = np.linspace(x_min, x_max, 999)
-    yplot = my_func(xplot, pick_a_function)
-    ypred = gisele.predict(xplot).reshape(-1)
+            # how bout data
+            ymean = gisele.predict(DATAX).reshape(-1)
+            msg = check_mean(ymean, DATAF)
+            print(msg)
+            flightlog.write(msg+'\n')
 
-    predfile = pd.DataFrame(xplot)
-    predfile['f'] = yplot
-    predfile['f_pred'] = ypred
-    predfile.to_csv(os.path.join(dafolda, 'test_data_out.csv'), index=False)
+            ystag = gisele.predict(STAGX).reshape(-1)
+            laplacian_stagf = compute_Laplacian(ymean, ystag)
 
-    plt.scatter(DATAX, DATAF, label='training')
-    plt.plot(xplot, yplot, label='ref')
-    plt.plot(xplot, ypred, label='pred')
-    plt.legend()
-    plt.savefig(os.path.join(dafolda, 'result.png'), format='png', dpi=1200)
-    plt.close()
+            loss_m = np.sqrt(np.mean((laplacian_stagf - laplacian_dataf)**2.))
+            msg = f"RMSE of the Laplacians: {loss_m:.3e}"
+            print(msg)
+            flightlog.write(msg+'\n')
+
+
+            # print da loss
+            plt.plot(np.array(loss), label=f"Training Loss (RMSE of the Laplacians: {loss_m:.3e})")
+            plt.xlabel('Epochs')
+            plt.ylabel('Log(Loss)')
+            plt.title('Loss Convergence')
+            plt.legend()
+            plt.savefig(os.path.join(dafolda, 'convergence.png'), format='png', dpi=1200)
+            plt.close()
+
+
+            # print da data
+            xplot = np.linspace(x_min, x_max, 999)
+            yplot = my_func(xplot, pick_a_function)
+            ypred = gisele.predict(xplot).reshape(-1)
+
+            predfile = pd.DataFrame(xplot)
+            predfile['f'] = yplot
+            predfile['f_pred'] = ypred
+            predfile.to_csv(os.path.join(dafolda, 'test_data_out.csv'), index=False)
+
+            plt.scatter(DATAX, DATAF, label='training')
+            plt.plot(xplot, yplot, label='ref')
+            plt.plot(xplot, ypred, label='pred')
+            plt.legend()
+            plt.savefig(os.path.join(dafolda, 'result.png'), format='png', dpi=1200)
+            plt.close()
