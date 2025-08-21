@@ -19,6 +19,8 @@ tf.keras.backend.set_floatx('float64')
 tf.random.set_seed(42)
 tf.keras.utils.set_random_seed(42)
 
+my_seed = 42
+
 
 
 ## FUNCTION: Compute Laplacians for 1D, cell centred, for normal or staggered meshes
@@ -71,8 +73,8 @@ def get_me_a_model(nn_layers, input_shape, activfunk):
     inputs = tf.keras.Input(shape=input_shape)
     x = inputs
     for nn in nn_layers:
-        #x = layers.Dense(nn, activation=activfunk, kernel_initializer='he_normal')(x) #paper:
-        x = layers.Dense(nn, activation=activfunk, kernel_initializer=keras.initializers.GlorotUniform(seed=None))(x)
+        x = layers.Dense(nn, activation=activfunk, kernel_initializer=keras.initializers.HeNormal(seed=my_seed))(x) #paper:
+        #x = layers.Dense(nn, activation=activfunk, kernel_initializer=keras.initializers.GlorotUniform(seed=my_seed))(x)
     output = layers.Dense(1)(x)
     model = tf.keras.Model(inputs=inputs, outputs=output)
     return model
