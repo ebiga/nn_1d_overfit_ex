@@ -216,7 +216,7 @@ for n_pts in _n_pts:
             layer_size = nn_layers[0]
             layer_tag  = f"{num_layers}x{layer_size}"
 
-            folder_name = folder_root + '/' + pick_a_function + f'/seed{my_seed}'
+            folder_name = folder_root + f'/HeNormal_seed{my_seed}' + '/' + pick_a_function + f'_p{n_pts}'
 
             dafolda = os.path.join(folder_name, layer_tag, an)
             os.makedirs(dafolda, exist_ok=True)
